@@ -28,16 +28,17 @@ function store {
   exec_dir=$(pwd)
   dest_dir="$exec_dir/backup"
   echo "Saving backup file in $dest_dir"
+  mkdir -p "$dest_dir"
 
   dest_file="$dest_dir/extensions.txt"
   ext_dirs_prefix=("$HOME/.local" "/usr")
   for prefix in "${ext_dirs_prefix[@]}"
   do
     path="${prefix}/share/gnome-shell/extensions"
-    test -d $path && ls -1 $path >> $dest_file \
+    test -d "$path" && ls -1 $path >> "$dest_file" \
       || echo "'$path' does not exist!"
   done
-  count=$(wc -l < $dest_file)
+  count=$(wc -l < "$dest_file")
   echo "Total number of $count extension were found"
 
   exit 0
