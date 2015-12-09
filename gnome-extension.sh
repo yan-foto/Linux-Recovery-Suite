@@ -24,17 +24,53 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '
 
-exec_dir=$(pwd)
-dest_dir="$exec_dir/backup"
-echo "Saving backup file in $dest_dir"
+function store {
+  exec_dir=$(pwd)
+  dest_dir="$exec_dir/backup"
+  echo "Saving backup file in $dest_dir"
 
-dest_file="$dest_dir/extensions.txt"
-ext_dirs_prefix=("$HOME/.local" "/usr")
-for prefix in "${ext_dirs_prefix[@]}"
+  dest_file="$dest_dir/extensions.txt"
+  ext_dirs_prefix=("$HOME/.local" "/usr")
+  for prefix in "${ext_dirs_prefix[@]}"
+  do
+    path="${prefix}/share/gnome-shell/extensions"
+    test -d $path && ls -1 $path >> $dest_file \
+      || echo "'$path' does not exist!"
+  done
+  count=$(wc -l < $dest_file)
+  echo "Total number of $count extension were found"
+
+  exit 0
+}
+
+function restore {
+  # To be implemented
+  echo "Restoring"
+}
+
+function show_help {
+  echo "Usage: [-s] [-r backup-file]"
+}
+
+while getopts ":sr:" opt
 do
-  path="${prefix}/share/gnome-shell/extensions"
-  test -d $path && ls -1 $path >> $dest_file \
-    || echo "'$path' does not exist!"
+  case $opt in
+    s)
+      store
+      ;;
+    r)
+      restore $OPTARG
+      ;;
+    :)
+      echo "Option '$OPTARG' requires an argument."
+      exit 1
+      ;;
+  esac
 done
-count=$(wc -l < $dest_file)
-echo "Total number of $count extension were found"
+
+shift $((OPTIND-1))
+
+if [$# -eq 0]
+then
+  show_help
+fi
