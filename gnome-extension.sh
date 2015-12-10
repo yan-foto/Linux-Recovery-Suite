@@ -24,6 +24,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 '
 
+# Find and sort installed extensions
+home_exts=~/.local/share/gnome-shell/extensions
+sys_exts=/usr/share/gnome-shell/extensions
+extensions=$({ test "$home_exts" && ls -1 "$home_exts"; \
+               test "$sys_exts" && ls -1 "$sys_exts"; })
+
 function store {
   exec_dir=$(pwd)
   dest_dir="$exec_dir/backup"
@@ -31,13 +37,7 @@ function store {
   mkdir -p "$dest_dir"
 
   dest_file="$dest_dir/extensions.txt"
-  ext_dirs_prefix=("$HOME/.local" "/usr")
-  for prefix in "${ext_dirs_prefix[@]}"
-  do
-    path="${prefix}/share/gnome-shell/extensions"
-    test -d "$path" && ls -1 $path >> "$dest_file" \
-      || echo "'$path' does not exist!"
-  done
+  echo "$extensions" | sort > "$dest_file"
   count=$(wc -l < "$dest_file")
   echo "Total number of $count extension were found"
 
