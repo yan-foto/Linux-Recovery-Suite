@@ -29,6 +29,8 @@ home_exts=~/.local/share/gnome-shell/extensions
 sys_exts=/usr/share/gnome-shell/extensions
 extensions=$({ test "$home_exts" && ls -1 "$home_exts"; \
                test "$sys_exts" && ls -1 "$sys_exts"; })
+# Is it sorted? Let me sort it!
+extensions=$(echo "$extensions" | sort)
 
 function store {
   exec_dir=$(pwd)
@@ -37,7 +39,7 @@ function store {
   mkdir -p "$dest_dir"
 
   dest_file="$dest_dir/extensions.txt"
-  echo "$extensions" | sort > "$dest_file"
+  echo "$extensions" > "$dest_file"
   count=$(wc -l < "$dest_file")
   echo "Total number of $count extension were found"
 
@@ -49,11 +51,25 @@ function restore {
   echo "Restoring"
 }
 
-function show_help {
-  echo "Usage: [-s] [-r backup-file]"
+function different {
+  target=$(<"$1")
+  difference=$(comm -23 <(echo "$target") <(echo "$extensions"))
+  if [ "$difference" ]
+  then
+    diff_count=$(wc -l <(echo "$difference"))
+    echo -e "Following extensions are not installed:\n$difference"
+  else
+    echo "All extensions in given file are installed!"
+  fi
+
+  exit 0
 }
 
-while getopts ":sr:" opt
+function show_help {
+  echo "Usage: [-s] [-r backup-file] [-d backup-file]"
+}
+
+while getopts ":srd:" opt
 do
   case $opt in
     s)
@@ -61,6 +77,9 @@ do
       ;;
     r)
       restore $OPTARG
+      ;;
+    d)
+      different $OPTARG
       ;;
     :)
       echo "Option '$OPTARG' requires an argument."
@@ -71,7 +90,7 @@ done
 
 shift $((OPTIND-1))
 
-if [$# -eq 0]
+if [ $# -eq 0 ]
 then
   show_help
 fi
