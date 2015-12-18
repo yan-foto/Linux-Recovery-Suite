@@ -25,12 +25,37 @@ SOFTWARE.
 '
 
 # Find and sort installed extensions
+gsh_version=$(gnome-shell --version | awk '{print $3}')
 home_exts=~/.local/share/gnome-shell/extensions
 sys_exts=/usr/share/gnome-shell/extensions
 extensions=$({ test "$home_exts" && ls -1 "$home_exts"; \
                test "$sys_exts" && ls -1 "$sys_exts"; })
 # Is it sorted? Let me sort it!
 extensions=$(echo "$extensions" | sort)
+download_prefix="https://extensions.gnome.org"
+
+function install {
+  echo "Trying to fetch '${1}'"
+
+  result=$(wget -qO- "https://extensions.gnome.org/extension-info/\
+           ?uuid=${1}\
+           &shell_version=${gsh_version}")
+
+  regex='"download_url": "([^,}]+)"'
+  if [[ $result =~ $regex ]];
+  then
+    download_path="${BASH_REMATCH[1]}"
+    temp_file=$(mktemp)
+    echo "${download_prefix}${download_path}"
+    wget "${download_prefix}${download_path}" -O "$temp_file"
+    unzip "$temp_file" -d "$home_exts/${1}"
+  else
+    echo "Extension '${1}' not found!"
+    exit 1
+  fi
+
+  exit 0
+}
 
 function store {
   exec_dir=$(pwd)
@@ -69,7 +94,7 @@ function show_help {
   echo "Usage: [-s] [-r backup-file] [-d backup-file]"
 }
 
-while getopts ":srd:" opt
+while getopts ":srdi:" opt
 do
   case $opt in
     s)
@@ -80,6 +105,9 @@ do
       ;;
     d)
       different $OPTARG
+      ;;
+    i)
+      install $OPTARG
       ;;
     :)
       echo "Option '$OPTARG' requires an argument."
